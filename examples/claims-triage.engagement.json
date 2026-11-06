@@ -1,0 +1,723 @@
+{
+  "schema": "agent-sa/engagement@1",
+  "engagement": {
+    "name": "Property claims triage assistant",
+    "customer": "Harbor Mutual (fictional)",
+    "updated": "2026-11-06"
+  },
+  "need": {
+    "statement": "Adjusters re-read every first notice of loss and its attachments to decide which team handles it, and urgent water claims wait in the same queue as routine ones.",
+    "business_driver": "Severe weather surges miss the 24-hour contact commitment in the state filing.",
+    "pain_points": [
+      "Triage takes 11 minutes per claim according to the queue system",
+      "Urgent water claims wait behind routine claims during surges",
+      "Attachments arrive as phone photos, scanned forms and email threads"
+    ],
+    "workflow": [
+      {
+        "step": "Claim arrives by portal or email",
+        "actor": "Policyholder",
+        "system": "Guidewire ClaimCenter"
+      },
+      {
+        "step": "Read the claim and attachments",
+        "actor": "Triage adjuster",
+        "system": "ClaimCenter",
+        "minutes": 8
+      },
+      {
+        "step": "Assign severity and team",
+        "actor": "Triage adjuster",
+        "system": "ClaimCenter",
+        "minutes": 3
+      }
+    ]
+  },
+  "stakeholders": [
+    {
+      "id": "P1",
+      "role": "VP of Claims",
+      "authority": "sponsor",
+      "cares_about": "Meeting the 24-hour contact commitment during surges"
+    },
+    {
+      "id": "P2",
+      "role": "Chief Information Security Officer",
+      "authority": "security",
+      "cares_about": "Policyholder data staying inside the Azure tenant"
+    },
+    {
+      "id": "P3",
+      "role": "ClaimCenter product owner",
+      "authority": "data-owner",
+      "cares_about": "No writes to the claim record without review"
+    },
+    {
+      "id": "P4",
+      "role": "Senior triage adjuster",
+      "authority": "end-user",
+      "cares_about": "Not having to double-check everything the tool says"
+    }
+  ],
+  "data_sources": [
+    {
+      "id": "D1",
+      "name": "Claim records",
+      "system": "Guidewire ClaimCenter",
+      "format": "REST API, JSON",
+      "volume": "about 900 claims per day, 6,000 in a surge",
+      "access": "requested",
+      "owner": "P3",
+      "sensitivity": "regulated",
+      "permissions": "app-level",
+      "sampled": true,
+      "notes": "Sandbox API approved; production read access is still open."
+    },
+    {
+      "id": "D2",
+      "name": "Claim attachments",
+      "system": "ClaimCenter document store",
+      "format": "Phone photos, scanned PDFs, email threads",
+      "volume": "about 4 per claim",
+      "access": "approved",
+      "owner": "P3",
+      "sensitivity": "regulated",
+      "permissions": "app-level",
+      "sampled": true,
+      "notes": "200 de-identified claims reviewed: 38 percent of scans are low contrast."
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "U1",
+      "question": "What share of claims does a human re-triage today?",
+      "why": "This is the baseline for severity agreement. Without it no accuracy claim can be compared with today's process.",
+      "owner": "P1",
+      "status": "open",
+      "about": [
+        "M2"
+      ]
+    },
+    {
+      "id": "U2",
+      "question": "Will the product owner approve production read access to claim records for the pilot?",
+      "why": "The pilot cannot leave the sandbox without it.",
+      "owner": "P3",
+      "status": "open",
+      "about": [
+        "D1"
+      ]
+    },
+    {
+      "id": "U3",
+      "question": "Does the state filing allow automated severity ranking if an adjuster confirms it?",
+      "why": "Answers whether the design needs legal sign-off before the pilot.",
+      "owner": "P2",
+      "status": "answered",
+      "answer": "Compliance confirmed on 2026-11-02 that a human-confirmed ranking is allowed."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "A1",
+      "statement": "Severity can be judged from the claim text and attachments alone, without calling the adjuster's notes.",
+      "source": "inferred",
+      "if_wrong": "Accuracy stays below the floor and the approach changes to rules plus manual review.",
+      "status": "untested"
+    },
+    {
+      "id": "A2",
+      "statement": "Adjusters will accept a suggested severity after reading a two-line reason.",
+      "source": "customer-stated",
+      "if_wrong": "Time saved falls to near zero because adjusters re-read everything.",
+      "status": "untested"
+    }
+  ],
+  "metrics": [
+    {
+      "id": "M1",
+      "name": "Triage minutes per claim",
+      "kind": "business",
+      "baseline": "11 minutes",
+      "baseline_source": "ClaimCenter queue timestamps, Q3 2026",
+      "target": "4 minutes",
+      "floor": "7 minutes",
+      "how_measured": "Queue timestamps in the pilot group against a matched control group"
+    },
+    {
+      "id": "M2",
+      "name": "Severity agreement with senior adjusters",
+      "kind": "quality",
+      "target": "90 percent on the urgent class",
+      "floor": "85 percent on the urgent class",
+      "how_measured": "Blind review of 300 stratified claims by two senior adjusters"
+    },
+    {
+      "id": "M3",
+      "name": "Urgent claims missed",
+      "kind": "safety",
+      "baseline": "1.2 percent",
+      "baseline_source": "Sampled audit, Q3 2026",
+      "target": "No worse than baseline",
+      "floor": "1.2 percent",
+      "how_measured": "Weekly audit sample of claims ranked non-urgent"
+    },
+    {
+      "id": "M4",
+      "name": "Model cost per claim",
+      "kind": "cost",
+      "baseline": "0",
+      "baseline_source": "No model in use today",
+      "target": "Under 0.15 USD",
+      "floor": "0.40 USD",
+      "how_measured": "Metered token cost divided by claims processed"
+    }
+  ],
+  "value": {
+    "hypothesis": "If triage falls from 11 to about 4 minutes, surge backlogs clear within the 24-hour commitment without temporary staff.",
+    "value_if_successful": "high",
+    "likelihood": "medium",
+    "investment": "medium",
+    "why": "Value is high because a missed filing commitment carries regulatory exposure. Likelihood is medium because low-contrast scans and adjuster trust are untested.",
+    "kill_criteria": [
+      "Severity agreement on urgent claims stays below 85 percent after two prompt and retrieval iterations",
+      "Adjusters re-read full attachments on more than half of assisted claims in the pilot",
+      "Urgent claims missed rises above the 1.2 percent baseline"
+    ]
+  },
+  "qualification": {
+    "approach": "workflow",
+    "why": "Triage is a fixed sequence: read, extract, rank and explain. Nothing needs the model to choose its own steps, so a deterministic workflow with model calls is cheaper to test and easier to audit than an agent.",
+    "build_or_buy": "build",
+    "rejected": [
+      {
+        "approach": "Rules on structured fields",
+        "why": "The severity signal is in free text and photos, and the structured loss code is wrong in about a quarter of sampled claims."
+      },
+      {
+        "approach": "Agent with tool choice",
+        "why": "No step needs dynamic planning, and open-ended tool use makes the audit trail harder to defend in a regulated process."
+      },
+      {
+        "approach": "Vendor add-on to ClaimCenter",
+        "why": "The add-on reviewed covers fraud scoring, not severity ranking from attachments."
+      }
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "kind": "functional",
+      "statement": "Suggest a severity and team for each new claim with a two-line reason citing the source text or image.",
+      "priority": "must",
+      "source": [
+        "P1",
+        "P4"
+      ],
+      "metric": "M2"
+    },
+    {
+      "id": "R2",
+      "kind": "security",
+      "statement": "Policyholder data must not leave the customer's Azure tenant boundary except to a model deployment contractually covered for regulated data.",
+      "priority": "must",
+      "source": [
+        "P2"
+      ]
+    },
+    {
+      "id": "R3",
+      "kind": "compliance",
+      "statement": "An adjuster confirms every severity before it is written to the claim.",
+      "priority": "must",
+      "source": [
+        "P3",
+        "U3"
+      ]
+    },
+    {
+      "id": "R4",
+      "kind": "quality",
+      "statement": "Results appear within 60 seconds of claim arrival during a surge of 6,000 claims per day.",
+      "priority": "should",
+      "source": [
+        "P1"
+      ]
+    },
+    {
+      "id": "R5",
+      "kind": "operational",
+      "statement": "Every suggestion is logged with its inputs, model version and adjuster decision.",
+      "priority": "must",
+      "source": [
+        "P2",
+        "P3"
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "Z1",
+      "name": "Harbor Mutual Azure tenant",
+      "kind": "customer"
+    },
+    {
+      "id": "Z2",
+      "name": "Model deployment (Azure region)",
+      "kind": "model-provider"
+    }
+  ],
+  "components": [
+    {
+      "id": "C1",
+      "name": "Triage adjuster",
+      "kind": "person",
+      "layer": "external",
+      "zone": "Z1"
+    },
+    {
+      "id": "C2",
+      "name": "ClaimCenter",
+      "kind": "external-system",
+      "layer": "external",
+      "zone": "Z1",
+      "tech": "Guidewire",
+      "satisfies": [
+        "R3"
+      ]
+    },
+    {
+      "id": "C3",
+      "name": "Review panel",
+      "kind": "ui",
+      "layer": "ux",
+      "zone": "Z1",
+      "tech": "Next.js on Container Apps",
+      "satisfies": [
+        "R1",
+        "R3"
+      ]
+    },
+    {
+      "id": "C4",
+      "name": "Triage workflow",
+      "kind": "service",
+      "layer": "orchestration",
+      "zone": "Z1",
+      "tech": "Durable Functions",
+      "satisfies": [
+        "R1",
+        "R4"
+      ]
+    },
+    {
+      "id": "C5",
+      "name": "Attachment reader",
+      "kind": "pipeline",
+      "layer": "ingestion",
+      "zone": "Z1",
+      "tech": "Content Understanding",
+      "satisfies": [
+        "R1"
+      ]
+    },
+    {
+      "id": "C6",
+      "name": "Severity model",
+      "kind": "model",
+      "layer": "model",
+      "zone": "Z2",
+      "tech": "Regional deployment",
+      "satisfies": [
+        "R1",
+        "R2"
+      ]
+    },
+    {
+      "id": "C7",
+      "name": "Evaluation harness",
+      "kind": "eval",
+      "layer": "evaluation",
+      "zone": "Z1",
+      "tech": "Golden set and adjuster review",
+      "summary": "Runs the 300-claim golden set on every prompt or model change.",
+      "satisfies": [
+        "R1"
+      ]
+    },
+    {
+      "id": "C8",
+      "name": "Audit log",
+      "kind": "observability",
+      "layer": "observability",
+      "zone": "Z1",
+      "tech": "Log Analytics",
+      "summary": "Inputs, model version, output, adjuster decision and token cost.",
+      "satisfies": [
+        "R5"
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "F1",
+      "name": "New claim to confirmed severity",
+      "steps": [
+        {
+          "from": "C2",
+          "to": "C4",
+          "label": "New claim event",
+          "data": "D1"
+        },
+        {
+          "from": "C4",
+          "to": "C5",
+          "label": "Read attachments",
+          "data": "D2"
+        },
+        {
+          "from": "C4",
+          "to": "C6",
+          "label": "Rank severity, de-identified text",
+          "data": "D1"
+        },
+        {
+          "from": "C4",
+          "to": "C8",
+          "label": "Log inputs and output",
+          "data": "D1"
+        },
+        {
+          "from": "C4",
+          "to": "C3",
+          "label": "Suggestion with cited reason",
+          "data": "D1"
+        },
+        {
+          "from": "C1",
+          "to": "C3",
+          "label": "Confirm or change severity"
+        },
+        {
+          "from": "C3",
+          "to": "C2",
+          "label": "Write confirmed severity",
+          "data": "D1"
+        }
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "X1",
+      "question": "Which deployment type should serve the model?",
+      "chosen": "A regional deployment in the tenant's Azure geography",
+      "rationale": "R2 requires processing to stay within the agreed boundary. A global deployment can process in any region.",
+      "status": "proposed",
+      "reversible": true,
+      "alternatives": [
+        {
+          "option": "Global Standard",
+          "why_not": "Inference may run in any Azure region, which fails R2."
+        },
+        {
+          "option": "Direct provider API",
+          "why_not": "Sends regulated data outside the tenant boundary."
+        }
+      ],
+      "evidence": [
+        {
+          "claim": "Global deployments can process inference in any Azure region; data zone and regional types constrain it.",
+          "source": "https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/deployment-types",
+          "as_of": "2026-11-06"
+        }
+      ],
+      "affects": [
+        "C6",
+        "C4"
+      ],
+      "consequences": "Regional capacity can be scarcer than global, so quota must be confirmed before the pilot."
+    },
+    {
+      "id": "X2",
+      "question": "Workflow or agent for orchestration?",
+      "chosen": "A durable workflow with model calls at fixed steps",
+      "rationale": "The steps do not vary per claim, and a fixed sequence gives the audit trail the product owner asked for.",
+      "status": "accepted",
+      "reversible": true,
+      "alternatives": [
+        {
+          "option": "Single agent with tools",
+          "why_not": "Adds unbounded tool use and cost variance with no benefit for a fixed sequence."
+        }
+      ],
+      "evidence": [
+        {
+          "claim": "Agents are warranted for complex decisions, brittle rules or heavy unstructured data, otherwise a deterministic solution may suffice.",
+          "source": "https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf",
+          "as_of": "2026-11-06"
+        }
+      ],
+      "affects": [
+        "C4",
+        "C2",
+        "C3",
+        "C5"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "id": "K1",
+      "statement": "Low-contrast scans cause the reader to miss damage details, so urgent claims are ranked low.",
+      "likelihood": "high",
+      "impact": "high",
+      "mitigation": "Route low-confidence reads to full manual triage and measure the rate.",
+      "owner": "Solutions architect",
+      "status": "open"
+    },
+    {
+      "id": "K2",
+      "statement": "Adjusters distrust suggestions and re-read everything, removing the time saving.",
+      "likelihood": "medium",
+      "impact": "high",
+      "mitigation": "Show the cited source inline and involve senior adjusters in the review panel design.",
+      "owner": "VP of Claims",
+      "status": "open"
+    },
+    {
+      "id": "K3",
+      "statement": "Production access to claim records is delayed beyond the pilot start.",
+      "likelihood": "medium",
+      "impact": "medium",
+      "mitigation": "Run the pilot on the sandbox API with replayed claims until access is approved.",
+      "owner": "ClaimCenter product owner",
+      "status": "open"
+    }
+  ],
+  "tests": [
+    {
+      "id": "T1",
+      "question": "Does severity agreement on urgent claims clear the 85 percent floor on real low-contrast scans?",
+      "de_risks": [
+        "K1",
+        "A1"
+      ],
+      "method": "Run 300 stratified de-identified claims through the reader and model; two senior adjusters score blind.",
+      "pass_if": "85 percent or better on the urgent class, with no class of scan below 75 percent",
+      "on_fail": "Add the low-confidence manual route, re-run once, then apply the kill criteria.",
+      "timebox_days": 6,
+      "status": "passed",
+      "result": "87 percent on urgent claims; low-contrast scans 78 percent."
+    },
+    {
+      "id": "T2",
+      "question": "Do adjusters accept a suggestion without re-reading the attachments?",
+      "de_risks": [
+        "K2",
+        "A2"
+      ],
+      "method": "Think-aloud sessions with six adjusters on 20 claims each, timed.",
+      "pass_if": "Median assisted triage under 7 minutes with re-reads on fewer than half of claims",
+      "on_fail": "Redesign the reason panel; if a second round fails, stop.",
+      "timebox_days": 4,
+      "status": "planned"
+    },
+    {
+      "id": "T3",
+      "question": "Can the sandbox API carry a replayed surge at 6,000 claims per day?",
+      "de_risks": [
+        "K3",
+        "U2"
+      ],
+      "method": "Replay one surge day from sandbox data at full rate.",
+      "pass_if": "95th percentile result under 60 seconds with no dropped claims",
+      "on_fail": "Queue with priority for urgent claims and revisit R4.",
+      "timebox_days": 2,
+      "status": "passed",
+      "result": "95th percentile 41 seconds, no drops, on the sandbox API."
+    },
+    {
+      "id": "T4",
+      "question": "Does the panel route low-confidence reads to a person and refuse to write without confirmation?",
+      "de_risks": [
+        "K1"
+      ],
+      "method": "Scripted run of 50 claims including 12 low-contrast scans, with write attempts both confirmed and unconfirmed.",
+      "pass_if": "Every low-confidence read reaches manual triage and no unconfirmed write succeeds",
+      "on_fail": "Block the pilot until the route and the write guard hold.",
+      "timebox_days": 1,
+      "status": "passed",
+      "result": "12 of 12 low-confidence reads routed to manual triage; 0 unconfirmed writes succeeded."
+    }
+  ],
+  "demo": {
+    "audience": "P1",
+    "goal": "Decide whether to fund the pilot.",
+    "beats": [
+      {
+        "shows": "A water claim arrives and the panel suggests urgent, citing the email text and a photo",
+        "claim": "Severity agreement on urgent claims was 87 percent in blind review",
+        "mode": "synthetic-data",
+        "disclosure": "These claims are de-identified replays from the sandbox, not live claims.",
+        "backed_by": "T1",
+        "fallback": "Recorded run of the same claim"
+      },
+      {
+        "shows": "A low-contrast scan is routed to manual triage instead of guessing",
+        "claim": "Low-confidence reads go to a person rather than producing a low-quality ranking",
+        "mode": "synthetic-data",
+        "disclosure": "These claims are de-identified replays from the sandbox, not live claims.",
+        "backed_by": "T4"
+      },
+      {
+        "shows": "A replayed surge day clears inside the 60-second target",
+        "claim": "The workflow carried a surge day at 41 seconds at the 95th percentile",
+        "mode": "recorded",
+        "disclosure": "This is a recording of the sandbox load test, not a production system.",
+        "backed_by": "T3"
+      },
+      {
+        "shows": "An adjuster confirms and the severity is written back",
+        "claim": "Nothing is written to the claim without a person confirming it",
+        "mode": "mock",
+        "disclosure": "The write-back is simulated because production access is not approved yet.",
+        "backed_by": "T4"
+      }
+    ]
+  },
+  "scope": {
+    "in": [
+      "Severity and team suggestion for property claims",
+      "Review panel for triage adjusters",
+      "Audit logging and an evaluation harness"
+    ],
+    "out": [
+      "Fraud detection",
+      "Automatic settlement or denial",
+      "Claims outside property lines",
+      "Changes to the ClaimCenter data model"
+    ],
+    "estimate_basis": "measured-prototype",
+    "basis_note": "Effort for phase 1 is measured from the prototype; later phases are judgment and are re-estimated at each gate.",
+    "run_cost": {
+      "as_of": "2026-11-06",
+      "range": "Roughly 4,000 to 11,000 USD per month at 900 claims per day, before reserved-capacity decisions",
+      "drivers": [
+        {
+          "name": "Model tokens",
+          "assumption": "About 6,000 input and 400 output tokens per claim, 0.15 to 0.40 USD per claim"
+        },
+        {
+          "name": "Document reading",
+          "assumption": "About 4 attachments per claim; verify per-page prices at quote time"
+        }
+      ]
+    }
+  },
+  "phases": [
+    {
+      "id": "H1",
+      "name": "Prove the risky parts",
+      "goal": "Answer the two riskiest questions on real scans with real adjusters.",
+      "effort_weeks": {
+        "low": 3,
+        "high": 5
+      },
+      "team": [
+        "Solutions architect",
+        "AI engineer"
+      ],
+      "deliverables": [
+        "Golden set of 300 claims",
+        "Evaluation harness",
+        "Review panel prototype"
+      ],
+      "exit_criteria": [
+        "Severity agreement and adjuster acceptance tests pass, or a named pivot is agreed",
+        "Baseline for severity agreement measured"
+      ],
+      "depends_on": [
+        "A1",
+        "A2",
+        "T1"
+      ]
+    },
+    {
+      "id": "H2",
+      "name": "Pilot with one team",
+      "goal": "Measure triage time and urgent claims missed against a control group on live claims.",
+      "effort_weeks": {
+        "low": 6,
+        "high": 12
+      },
+      "team": [
+        "AI engineer",
+        "Backend engineer",
+        "Change lead"
+      ],
+      "deliverables": [
+        "Pilot deployment",
+        "Audit log and dashboards",
+        "Adjuster training"
+      ],
+      "exit_criteria": [
+        "Triage time at or below the 7-minute floor",
+        "Urgent claims missed no worse than baseline for four weeks",
+        "Security review passed"
+      ],
+      "depends_on": [
+        "U2",
+        "D1"
+      ]
+    },
+    {
+      "id": "H3",
+      "name": "Roll out",
+      "goal": "Extend to all property triage teams and hand over.",
+      "effort_weeks": {
+        "low": 6,
+        "high": 16
+      },
+      "team": [
+        "Backend engineer",
+        "Platform engineer",
+        "Change lead"
+      ],
+      "deliverables": [
+        "Production deployment",
+        "Runbooks",
+        "Evaluation kit handover"
+      ],
+      "exit_criteria": [
+        "All teams live with triage time and urgent claims missed holding for one surge event",
+        "Customer team runs the evaluation harness unaided"
+      ]
+    }
+  ],
+  "audiences": [
+    {
+      "audience": "P1",
+      "depth": "executive",
+      "ask": "Fund the 3 to 5 week proof phase and name an owner for the re-triage baseline."
+    },
+    {
+      "audience": "P2",
+      "depth": "technical",
+      "ask": "Confirm the regional deployment boundary and review the audit log design."
+    }
+  ],
+  "handoff": {
+    "delivery_owner": "Delivery lead, to be named at the H1 gate",
+    "eval_kit": [
+      "Golden set of 300 stratified claims with adjuster labels",
+      "Blind scoring protocol and the judge agreement target",
+      "Harness that re-runs the set on any prompt or model change",
+      "Viewer for reading traces next to adjuster decisions"
+    ],
+    "commitments": [
+      "No automated write to a claim without adjuster confirmation",
+      "Pilot stops if the urgent-claims-missed rate rises above baseline"
+    ]
+  }
+}

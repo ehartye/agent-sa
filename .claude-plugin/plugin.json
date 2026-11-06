@@ -1,0 +1,9 @@
+{
+  "name": "agent-sa",
+  "version": "0.1.0",
+  "description": "AI solutions architect workflow: turn a customer use case into one validated engagement file, then generate architecture diagrams, a self-contained deck, a demo runbook, a gated estimate and a delivery handoff from it. Node.js 22+, no dependencies.",
+  "author": { "name": "ehartye" },
+  "repository": "https://github.com/ehartye/agent-sa",
+  "license": "MIT",
+  "keywords": ["solutions-architecture", "discovery", "architecture-diagrams", "estimation", "presentations"]
+}
