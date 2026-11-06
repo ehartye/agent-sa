@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const skillsDir = join(root, 'skills');
-const SKIP = new Set(['.git', 'node_modules', '.playwright-mcp', 'out', 'dist']);
+const SKIP = new Set(['.git', '.claude', 'node_modules', '.playwright-mcp', 'out', 'dist']);
 const TEXT = /\.(md|json|mjs|js|yml|yaml|txt)$/;
 
 function walk(dir, found = []) {
